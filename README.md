@@ -6,7 +6,7 @@
 
 ## The Multi-level tiling
 
-## Layout algebra: The physical, the logical, and the hierarchical
+## The physical, the logical, and the hierarchical
 
 ## Hacker's delight: Let's play with bits
 
