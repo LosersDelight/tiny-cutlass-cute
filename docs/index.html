@@ -22,6 +22,37 @@
     gtag('config', 'G-PYVRSFMDRL');
   </script>
 
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const codeBlocks = document.querySelectorAll('pre > code');
+      
+      codeBlocks.forEach(block => {
+        const pre = block.parentElement;
+        const container = document.createElement('div');
+        container.className = 'code-container';
+        
+        pre.parentNode.replaceChild(container, pre);
+        
+        const shadow = container.attachShadow({ mode: 'open' });
+        
+        const styleLink = document.createElement('link');
+        styleLink.rel = 'stylesheet';
+        styleLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css';
+        shadow.appendChild(styleLink);
+        
+        shadow.appendChild(pre);
+        
+        Prism.highlightElement(block);
+      });
+    });
+  </script>
+
+  <!-- hilight -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+
   <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
         rel="stylesheet">
 
@@ -112,18 +143,319 @@
     <!-- SS1. -->
     <div class="columns is-centered has-text-centered">
       <div class="column is-four-fifths">
-        <h2 class="title is-3">A Simple Single-level tiling</h2>
+        <h2 class="title is-2">A Simple Single-level tiling</h2>
         <div class="content has-text-justified">
           <p>
-            One get bored, some bit change.
+          It start with a simple copy.
           </p>
+
+          <p>
+          Let say copy from <strong>src</strong> to <strong>dst</strong>. A simple <strong>fully copy without any slicing</strong>.
+          </p>
+
+          <pre><code class="language-cpp">
+// src: [0, 1, 2, 3]
+// dst: [0, 1, 2, 3]
+for (int i = 0; i < dst.size(); i++) {
+  dst[i] = src[i];
+}
+          </code></pre>
+
+
+          <p>
+          A more complicate <strong>2D fully copy</strong> look like this.
+          </p>
+
+          <pre><code class="language-auto">
+// shape = (2, 4)
+// src: [
+//   [0, 1, 2, 3]
+//   [4, 5, 6, 7]
+// ]
+//
+// shape = (2, 4)
+// dst: [
+//   [0, 1, 2, 3]
+//   [4, 5, 6, 7]
+// ]
+for (int i = 0; i < dst.size(); i++) {
+  dst[i] = src[i];
+}
+          </code></pre>
+
+          <p>
+          Or we can use a <strong>coordinate</strong> manner.
+          </p>
+
+          <pre><code class="language-auto">
+// shape = (2, 4)
+// src: [
+//   [0, 1, 2, 3]
+//   [4, 5, 6, 7]
+// ]
+//
+// shape = (2, 4)
+// dst: [
+//   [0, 1, 2, 3]
+//   [4, 5, 6, 7]
+// ]
+for (int r = 0; r < dst.size<0>(); r++) {
+  for (int c = 0; c < dst.size<1>(); c++) {
+    dst[r][c] = src[r][c];
+  }
+}
+          </code></pre>
+
+          <p>
+          Things become more complicate if we want to copy a <strong>slice</strong>. And now the stride of the underlying <strong>physical layout</strong> works.
+
+          <br/>
+          1. Firstly we want to copy a slice of shape(2, 2)
+          <br/>
+          2. The physical layout is (2, 4)
+          <br/>
+          3. Taking stride carefully
+          </p>
+
+          <pre><code>
+// shape = (2, 4)
+// src: [
+//   [0, 1, 2, 3]
+//   [4, 5, 6, 7]
+// ]
+//
+// shape = (2, 4)
+// dst: [
+//   [0, 1, 2, 3]
+//   [4, 5, 6, 7]
+// ]
+//
+// NOTE: we want to copy a slice:
+// [
+//   [0, 1]
+//   [4, 5]
+// ]
+auto phy_shape = {2, 4};
+auto phy_stride = {4, 1};
+for (int r = 0; r < dst.size<0>(); r++) {
+  for (int c = 0; c < dst.size<1>(); c++) {
+    // coordinate to index: idx = crd2idx(m, n)
+    auto i = r * phy_stride[0] + c * phy_stride[1];
+    dst[i] = src[i];
+  }
+}
+          </code></pre>
+
+          <p>
+          What if the slice start with a offset? Let say the [2, 3, 6, 7].
+          <br/>
+          The stride still work.
+          </p>
+
+          <pre><code>
+// shape = (2, 4)
+// src: [
+//   [0, 1, 2, 3]
+//   [4, 5, 6, 7]
+// ]
+//
+// shape = (2, 4)
+// dst: [
+//   [0, 1, 2, 3]
+//   [4, 5, 6, 7]
+// ]
+//
+// NOTE: we want to copy a slice:
+// [
+//   [2, 3]
+//   [6, 7]
+// ]
+//
+// NOTE: The stride still work as 4!
+// [
+//   [offset]
+//   [2, 3, x, x]
+//   [6, 7, ?, ?]
+// ]
+auto phy_shape = {2, 4};
+auto phy_stride = {4, 1};
+dst = dst + 2;
+src = src + 2;
+for (int r = 0; r < dst.size<0>(); r++) {
+  for (int c = 0; c < dst.size<1>(); c++) {
+    // coordinate to index: idx = crd2idx(m, n)
+    auto i = r * phy_stride[0] + c * phy_stride[1];
+    dst[i] = src[i];
+  }
+}
+          </code></pre>
+
+          <p><strong>
+          A tiling is like create a slice of global memory or share memory. And prepare(copy) data.
+          <br>
+          - g2g
+          <br>
+          - g2s
+          <br>
+          - s2r
+          <br>
+          - ...
+          <br>
+          </strong></p>
+
+
         </div>
       </div>
     </div>
     <!--/ SS1. -->
 
+    <!-- SS2. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-2">The Multi-level tiling</h2>
+        <div class="content has-text-justified">
+          <p>
+          Think about something like we have a slice of global memory gAgA and a copy of this slice sAsA.
+          </p>
+
+          <p>
+          The first gA means the "logical layout": a global logical layout of A.
+          The second gA means the "physical layout and backend": physical layout of A, backend by global memory.
+          </p>
+
+          <p>
+          The thing is: 1) We want to copy a slice from global memory to share memory. 2) We want to copy a slice by
+          warp group from share memory: the warps layout. 3) We then copy from a slice of warp's layout to thread's registers.
+          </p>
+
+          <p>
+          And to make things easy. We introduce <strong>Tensor</strong>, a structure who take care of shape, stride, crd2idx
+          idx2crd(logical index to logical coordinate), and the base offset(e.g. physical idx + base_offset).
+          </p>
+
+          <pre><code>
+struct Tensor {
+  void* data_ptr;
+  size_t base_offset_;
+  Shape shape_;
+  Stride stride_;
+  // logical coordinate to **physical** index.
+  size_t crd2idx();
+  // logical index to **logical** coordinate.
+  Coord idx2crd();
+};
+          </code></pre>
+
+          <p>
+          Then the copy looks like this.
+          </p>
+
+          <pre><code>
+// shape = (2, 4)
+// global_layout: [
+//   [0, 1, 2, 3]
+//   [4, 5, 6, 7]
+// ]
+//
+// shape = (2, 2)
+// global_local_slice: [
+//   [x, x, 2, 3]
+//   [x, x, 6, 7]
+// ]
+//
+// shape = (2, 2)
+// smem_layout: [
+//   [2, 3]
+//   [6, 7]
+// ]
+//
+// shape = (1, 2)
+// warps_layout: [
+//   [2, 3]
+// ]
+//
+// shape = (1, 1)
+// threads_layout: [
+//   [3]
+// ]
+
+// name: gmem layout of A, backend by gmem
+// shape:stride = (2, 4):(4, 1)
+// base offset = 0
+Tensor gA;
+// name: local gmem layout of A, backend by gmem
+// shape:stride = (2, 2):(4, 1), base
+// base offset = xxx
+Tensor gAgA;
+// name: smem layout of A, backend by smem
+// shape:stride = (2, 2):(2, 1)
+// base offset = 0
+Tensor sAsA;
+// name: warps layout of A, backend by smem
+// shape:stride = (1, 2):(2, 1)
+// base offset = xxx
+Tensor wAsA;
+// name: threads layout of A, backend by reg
+// shape:stride = (1, 1):(1, 1)
+// base offset = xxx
+Tensor tArA;
+
+// global to shared memory
+auto src = gAgA;
+auto dst = sAsA;
+for (int i = 0; i < dst.size(); i++) {
+  // get logical coordinate
+  auto l_coord = dst.idx2crd(i);
+  // get physical coordinate
+  auto src_idx = src.crd2idx(l_coord);
+  auto dst_idx = dst.crd2idx(l_coord);
+  dst[dst_idx] = src[src_idx];
+}
+
+// shared memory to warp tile
+auto src = sAsA;
+auto dst = wAsA;
+for (int i = 0; i < dst.size(); i++) {
+  // get logical coordinate
+  auto l_coord = dst.idx2crd(i);
+  // get physical coordinate
+  auto src_idx = src.crd2idx(l_coord);
+  auto dst_idx = dst.crd2idx(l_coord);
+  dst[dst_idx] = src[src_idx];
+}
+
+// warp tile to thread's reg
+auto src = wAsA;
+auto dst = tArA;
+for (int i = 0; i < dst.size(); i++) {
+  // get logical coordinate
+  auto l_coord = dst.idx2crd(i);
+  // get physical coordinate
+  auto src_idx = src.crd2idx(l_coord);
+  auto dst_idx = dst.crd2idx(l_coord);
+  dst[dst_idx] = src[src_idx];
+}
+          </code></pre>
+
+          <p>
+          Now I am happy to get rid of something like: ptr + base_offset + stride0*a + stride1 * b + ...
+          </p>
+
+
+        </div>
+      </div>
+    </div>
+    <!--/ SS2. -->
+
+
+
+          <!-- <pre><code> -->
+          <!-- </code></pre> -->
+
+
   </div>
 </section>
+
 
 
 <footer class="footer">
