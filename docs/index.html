@@ -406,10 +406,11 @@ auto src = gAgA;
 auto dst = sAsA;
 for (int i = 0; i < dst.size(); i++) {
   // get logical coordinate
-  auto l_coord = dst.idx2crd(i);
+  auto l_coord_src = src.idx2crd(i);
+  auto l_coord_dst = dst.idx2crd(i);
   // get physical coordinate
-  auto src_idx = src.crd2idx(l_coord);
-  auto dst_idx = dst.crd2idx(l_coord);
+  auto src_idx = src.crd2idx(l_coord_src);
+  auto dst_idx = dst.crd2idx(l_coord_dst);
   dst[dst_idx] = src[src_idx];
 }
 
@@ -418,10 +419,11 @@ auto src = sAsA;
 auto dst = wAsA;
 for (int i = 0; i < dst.size(); i++) {
   // get logical coordinate
-  auto l_coord = dst.idx2crd(i);
+  auto l_coord_src = src.idx2crd(i);
+  auto l_coord_dst = dst.idx2crd(i);
   // get physical coordinate
-  auto src_idx = src.crd2idx(l_coord);
-  auto dst_idx = dst.crd2idx(l_coord);
+  auto src_idx = src.crd2idx(l_coord_src);
+  auto dst_idx = dst.crd2idx(l_coord_dst);
   dst[dst_idx] = src[src_idx];
 }
 
@@ -430,10 +432,11 @@ auto src = wAsA;
 auto dst = tArA;
 for (int i = 0; i < dst.size(); i++) {
   // get logical coordinate
-  auto l_coord = dst.idx2crd(i);
+  auto l_coord_src = src.idx2crd(i);
+  auto l_coord_dst = dst.idx2crd(i);
   // get physical coordinate
-  auto src_idx = src.crd2idx(l_coord);
-  auto dst_idx = dst.crd2idx(l_coord);
+  auto src_idx = src.crd2idx(l_coord_src);
+  auto dst_idx = dst.crd2idx(l_coord_dst);
   dst[dst_idx] = src[src_idx];
 }
           </code></pre>
